@@ -10,8 +10,10 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Ollama
-RUN wget https://github.com/ollama/ollama/releases/latest/download/ollama-linux-amd64 -O /usr/local/bin/ollama \
-    && chmod +x /usr/local/bin/ollama
+RUN wget https://github.com/ollama/ollama/releases/latest/download/ollama-linux-amd64.tgz -O /tmp/ollama.tgz \
+    && tar -xzf /tmp/ollama.tgz -C /usr/local/bin/ \
+    && chmod +x /usr/local/bin/ollama \
+    && rm /tmp/ollama.tgz
 
 # Set working directory
 WORKDIR /app
