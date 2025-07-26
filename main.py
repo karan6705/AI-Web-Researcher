@@ -5,14 +5,25 @@ from scrape import (
     clean_body_content,
     split_dom_content,
 )
+from parse import parse_with_gemini
+from config import AVAILABLE_MODELS, DEFAULT_MODEL, MODEL_DESCRIPTIONS
 
 # Streamlit UI
-st.title("Web Scraper")
+st.title("AI Web Scraper")
 st.markdown("---")
+
+# Model Selection
+st.subheader("Choose AI Model")
+selected_model = st.selectbox(
+    "Select the AI model for parsing:",
+    options=list(AVAILABLE_MODELS.keys()),
+    index=list(AVAILABLE_MODELS.keys()).index(DEFAULT_MODEL),
+    format_func=lambda x: f"{x} - {MODEL_DESCRIPTIONS[x]}"
+)
 
 url = st.text_input("Enter Website URL")
 
-# Step 1: Scrape the Websitea
+# Step 1: Scrape the Website
 if st.button("Scrape Website"):
     if url:
         st.write("Scraping the website...")
@@ -35,7 +46,26 @@ if st.button("Scrape Website"):
         except Exception as e:
             st.error(f"Error scraping website: {str(e)}")
 
-# Step 2: Display Content Analysis
+# Step 2: AI Content Parsing
+if "dom_content" in st.session_state:
+    st.subheader("AI Content Parsing")
+
+    parse_description = st.text_area(
+        "Describe what you want to parse from the content")
+
+    if st.button("Parse Content with AI"):
+        if parse_description:
+            st.write(f"Parsing the content using {selected_model}...")
+
+            # Parse the content with Gemini using selected model
+            dom_chunks = split_dom_content(st.session_state.dom_content)
+            parsed_result = parse_with_gemini(
+                dom_chunks, parse_description, AVAILABLE_MODELS[selected_model])
+
+            st.subheader("AI Parsing Results")
+            st.write(parsed_result)
+
+# Step 3: Content Analysis
 if "dom_content" in st.session_state:
     st.subheader("Content Analysis")
 
@@ -60,13 +90,11 @@ if "dom_content" in st.session_state:
                          height=150, key=f"chunk_{i}")
             st.markdown("---")
 
-# Information about AI features
+# Information about the app
 st.markdown("---")
 st.info("""
-**Note:** AI parsing features are currently disabled for deployment compatibility. 
-This version provides web scraping and content analysis without AI processing.
-To enable AI features, you would need to:
-1. Use external AI APIs (OpenAI, Anthropic, etc.)
-2. Deploy Ollama separately
-3. Use Render's built-in AI services
+**AI Web Scraper powered by Google Gemini API**
+
+This application now uses Google's Gemini API for AI-powered content parsing.
+Make sure your GEMINI_API_KEY environment variable is set in Render.
 """)
