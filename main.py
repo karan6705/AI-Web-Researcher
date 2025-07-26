@@ -5,52 +5,68 @@ from scrape import (
     clean_body_content,
     split_dom_content,
 )
-from parse import parse_with_ollama
-from config import AVAILABLE_MODELS, DEFAULT_MODEL, MODEL_DESCRIPTIONS
 
 # Streamlit UI
-st.title("AI Web Scraper")
+st.title("Web Scraper")
 st.markdown("---")
-
-# Model Selection
-st.subheader("Choose AI Model")
-selected_model = st.selectbox(
-    "Select the AI model for parsing:",
-    options=list(AVAILABLE_MODELS.keys()),
-    index=list(AVAILABLE_MODELS.keys()).index(DEFAULT_MODEL),
-    format_func=lambda x: f"{x} - {MODEL_DESCRIPTIONS[x]}"
-)
 
 url = st.text_input("Enter Website URL")
 
-# Step 1: Scrape the Website
+# Step 1: Scrape the Websitea
 if st.button("Scrape Website"):
     if url:
         st.write("Scraping the website...")
 
-        # Scrape the website
-        dom_content = scrape_website(url)
-        body_content = extract_body_content(dom_content)
-        cleaned_content = clean_body_content(body_content)
+        try:
+            # Scrape the website
+            dom_content = scrape_website(url)
+            body_content = extract_body_content(dom_content)
+            cleaned_content = clean_body_content(body_content)
 
-        # Store the DOM content in Streamlit session state
-        st.session_state.dom_content = cleaned_content
+            # Store the DOM content in Streamlit session state
+            st.session_state.dom_content = cleaned_content
 
-        # Display the DOM content in an expandable text box
-        with st.expander("View DOM Content"):
-            st.text_area("DOM Content", cleaned_content, height=300)
+            # Display the DOM content in an expandable text box
+            with st.expander("View Scraped Content"):
+                st.text_area("Scraped Content", cleaned_content, height=300)
 
+            st.success("Website scraped successfully!")
 
-# Step 2: Ask Questions About the DOM Content
+        except Exception as e:
+            st.error(f"Error scraping website: {str(e)}")
+
+# Step 2: Display Content Analysis
 if "dom_content" in st.session_state:
-    parse_description = st.text_area("Describe what you want to parse")
+    st.subheader("Content Analysis")
 
-    if st.button("Parse Content"):
-        if parse_description:
-            st.write(f"Parsing the content using {selected_model}...")
+    # Split content into chunks for analysis
+    dom_chunks = split_dom_content(st.session_state.dom_content)
 
-            # Parse the content with Ollama using selected model
-            dom_chunks = split_dom_content(st.session_state.dom_content)
-            parsed_result = parse_with_ollama(
-                dom_chunks, parse_description, AVAILABLE_MODELS[selected_model])
-            st.write(parsed_result)
+    # Display basic statistics
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Total Characters", len(st.session_state.dom_content))
+    with col2:
+        st.metric("Number of Chunks", len(dom_chunks))
+    with col3:
+        st.metric("Average Chunk Size", len(
+            st.session_state.dom_content) // len(dom_chunks) if dom_chunks else 0)
+
+    # Display chunks
+    with st.expander("View Content Chunks"):
+        for i, chunk in enumerate(dom_chunks, 1):
+            st.write(f"**Chunk {i}:**")
+            st.text_area(f"Chunk {i} Content", chunk,
+                         height=150, key=f"chunk_{i}")
+            st.markdown("---")
+
+# Information about AI features
+st.markdown("---")
+st.info("""
+**Note:** AI parsing features are currently disabled for deployment compatibility. 
+This version provides web scraping and content analysis without AI processing.
+To enable AI features, you would need to:
+1. Use external AI APIs (OpenAI, Anthropic, etc.)
+2. Deploy Ollama separately
+3. Use Render's built-in AI services
+""")
