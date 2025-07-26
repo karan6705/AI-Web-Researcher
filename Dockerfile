@@ -11,7 +11,8 @@ RUN apt-get update && apt-get install -y \
 
 # Install Ollama
 RUN wget https://github.com/ollama/ollama/releases/latest/download/ollama-linux-amd64.tgz -O /tmp/ollama.tgz \
-    && tar -xzf /tmp/ollama.tgz -C /usr/local/bin/ \
+    && tar -xzf /tmp/ollama.tgz -C /tmp/ \
+    && mv /tmp/ollama /usr/local/bin/ \
     && chmod +x /usr/local/bin/ollama \
     && rm /tmp/ollama.tgz
 
